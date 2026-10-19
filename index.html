@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tesla Stock vs. Gasoline Prices</title>
+<style>
+:root{--bg:#0b1120;--panel:#121c2e;--border:#27344a;--text:#edf3ff;--muted:#98a9c1;--blue:#84aaff;--green:#5de0bd;--amber:#f1c279}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px system-ui,-apple-system,sans-serif}
+main{max-width:1380px;margin:auto;padding:30px 28px}
+.brand{display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:.15em;font-weight:750;color:var(--muted)}
+.brand i{width:12px;height:12px;background:var(--green);border-radius:4px;transform:rotate(20deg)}
+header{padding:26px 0}
+h1{font-size:clamp(29px,4vw,46px);letter-spacing:-.045em;margin:0 0 12px;line-height:1.15}
+h2{font-size:17px;letter-spacing:-.02em;margin:0}
+p{color:var(--muted);line-height:1.65}
+.subtitle{font-size:16px;max-width:850px}
+.tags{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 4px}
+.tag{padding:7px 11px;border:1px solid var(--border);border-radius:20px;color:var(--muted);font-size:11px}
+.notice{border:1px solid #705d38;background:#282319;border-radius:12px;padding:16px 19px;color:#edcf9d;font-size:12px;line-height:1.7}
+.notice strong{color:#ffe2b5}
+.controls{display:flex;gap:14px;align-items:end;flex-wrap:wrap;margin:23px 0}
+label{font-size:11px;color:var(--muted)}
+select{display:block;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px 30px 10px 11px;font:inherit;margin-top:6px}
+.check{display:flex;align-items:center;gap:7px;padding:12px 0;font-size:12px}
+input{accent-color:var(--green)}
+button{background:#23324c;border:1px solid #385071;color:var(--text);padding:10px 14px;border-radius:8px;font:inherit;font-size:12px;cursor:pointer}
+button:hover{background:#304669}
+.controls button{margin-left:auto}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:20px}
+.card,.panel{border:1px solid var(--border);background:var(--panel);border-radius:13px}
+.card{padding:20px}
+.card .label{font-size:10px;letter-spacing:.09em;color:var(--muted);font-weight:650}
+.value{font-size:33px;font-weight:650;letter-spacing:-.045em;margin:13px 0 9px}
+.small{font-size:11px;color:var(--muted);line-height:1.65}
+.blue{color:var(--blue)}.green{color:var(--green)}
+.panel{padding:23px;margin-bottom:20px;min-width:0}
+.panelhead{display:flex;justify-content:space-between;align-items:start;gap:16px}
+.panelhead p{font-size:12px;margin:8px 0}
+.number{color:var(--green);font-size:11px;margin-right:8px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.plot{height:360px;position:relative;min-width:0;touch-action:pan-y}
+.plot svg{width:100%;height:100%;display:block;overflow:visible}
+.legend{display:flex;gap:15px;flex-wrap:wrap;margin:10px 0}
+.legend button{border:0;background:none;padding:3px 0;display:flex;align-items:center;gap:7px;color:var(--muted)}
+.legend button.off{opacity:.35}
+.legend i{width:17px;height:3px;display:block}
+.tooltip{position:absolute;pointer-events:none;background:#071020;border:1px solid #435570;padding:10px 12px;border-radius:8px;display:none;white-space:pre-line;font-size:11px;line-height:1.7;z-index:3;box-shadow:0 10px 25px #0005}
+.finding{background:#17283a;border-left:3px solid var(--blue);border-radius:5px;padding:14px 17px;color:#bbcee6;font-size:12px;line-height:1.8;margin:4px 0 22px}
+.tablewrap{overflow:auto;max-height:420px;margin-top:14px}
+table{border-collapse:collapse;width:100%;white-space:nowrap;font-size:11px}
+th,td{padding:12px 14px;text-align:right;border-bottom:1px solid var(--border)}
+th{position:sticky;top:0;background:var(--panel);color:var(--muted);font-weight:500}
+th:first-child,td:first-child{text-align:left}
+.missing{color:var(--amber)}
+.sourcegrid{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:20px}
+a{color:var(--blue)}
+details{font-size:12px;line-height:1.8;color:var(--muted)}
+summary{cursor:pointer;color:var(--text);font-weight:600}
+details p{font-size:12px}
+input[type=file]{font-size:12px;display:block;margin:13px 0;width:100%;color:var(--muted)}
+.status{color:var(--green);min-height:20px;font-size:12px}
+footer{color:var(--muted);font-size:11px;padding:0 0 20px;line-height:1.8}
+.kicker{color:var(--green);font-size:10px;letter-spacing:.1em;font-weight:700}
+@media(max-width:850px){.cards{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}.sourcegrid{grid-template-columns:1fr}.plot{height:330px}main{padding:24px 16px}.panel{padding:18px}.controls button{margin-left:0}}
+@media(max-width:450px){.cards{gap:10px}.card{padding:15px}.value{font-size:27px}.card .label{font-size:9px}.panelhead{flex-wrap:wrap}.plot{height:295px}.subtitle{font-size:14px}.controls{gap:10px}}
+</style>
+</head>
+<body>
+<main>
+<div class="brand"><i></i> MARKET RELATIONSHIP LAB</div>
+<header>
+<h1>Tesla Stock vs. Gasoline Prices</h1>
+<p class="subtitle">Is there a relationship between changes in U.S. gasoline prices and Tesla’s stock performance?</p>
+<div class="tags">
+<span class="tag">October 2023 – October 2026</span>
+<span class="tag">As of October 19, 2026 · 12:45 p.m. ET</span>
+<span class="tag">Yahoo Finance × U.S. EIA</span>
+<span class="tag">Actual observations · no estimates</span>
+</div>
+</header>
+
+<div class="notice" id="coverage">
+<strong>Incomplete stock history.</strong> EIA observations cover every requested month. Yahoo’s full historical download was rate-limited; only 13 verified TSLA month-end observations, October 2025–October 2026, are embedded. Earlier stock months are missing, not estimated. Correlation uses the available overlap; a full October 2023–October 2026 Tesla return cannot yet be calculated.
+</div>
+
+<div class="controls">
+<label>START MONTH<select id="start" aria-label="Start month"></select></label>
+<label>END MONTH<select id="end" aria-label="End month"></select></label>
+<label class="check"><input id="partial" type="checkbox" checked> Include partial October 2026</label>
+<button id="reset">Reset dates</button>
+<button id="export">Export monthly CSV ↗</button>
+</div>
+
+<section class="cards" aria-label="Summary statistics">
+<div class="card">
+<div class="label">PEARSON CORRELATION · r</div>
+<div class="value" id="correlation">—</div>
+<div class="small" id="paircount"></div>
+</div>
+<div class="card">
+<div class="label">TESLA · SELECTED-PERIOD RETURN</div>
+<div class="value blue" id="totalStock">—</div>
+<div class="small" id="stockDescription"></div>
+</div>
+<div class="card">
+<div class="label">GASOLINE · SELECTED-PERIOD CHANGE</div>
+<div class="value green" id="totalGas">—</div>
+<div class="small" id="gasDescription"></div>
+</div>
+<div class="card">
+<div class="label">LINEAR REGRESSION · R²</div>
+<div class="value" id="rSquared">—</div>
+<div class="small">Fit on paired monthly percentage changes</div>
+</div>
+</section>
+
+<div class="finding" id="finding" role="status"></div>
+
+<section class="panel">
+<div class="panelhead">
+<div><h2><span class="number">01</span>Tesla Stock Performance vs. Gasoline Prices</h2>
+<p id="baseDescription"></p></div>
+<span class="tag">Indexed performance</span>
+</div>
+<div class="legend" id="legend-index"></div>
+<div class="plot" id="index"></div>
+<p class="small">Indexing compares relative performance. Gaps stay visible; neither series is interpolated across unavailable months.</p>
+</section>
+
+<div class="grid">
+<section class="panel">
+<div class="panelhead"><div>
+<h2><span class="number">02</span>Gasoline changes vs. Tesla returns</h2>
+<p>Each point represents one calendar month.</p>
+</div></div>
+<div class="legend" id="legend-scatter"></div>
+<div class="plot" id="scatter"></div>
+<p class="small" id="regression"></p>
+</section>
+<section class="panel">
+<div class="panelhead"><div>
+<h2><span class="number">03</span>Monthly Percentage Changes</h2>
+<p>Adjacent calendar-month changes · zero reference shown.</p>
+</div></div>
+<div class="legend" id="legend-changes"></div>
+<div class="plot" id="changes"></div>
+<p class="small">October 2026, when included, compares month-to-date observations with September’s full-month observations.</p>
+</section>
+</div>
+
+<section class="panel">
+<div class="panelhead">
+<div><h2>Observation audit</h2><p>Prices, returns, coverage, and the weekly observations behind each gasoline average.</p></div>
+<label>SHOW<select id="auditFilter"><option value="all">All months</option><option value="missing">Missing stock data</option><option value="paired">Paired monthly changes</option></select></label>
+</div>
+<div class="tablewrap">
+<table>
+<thead><tr><th>Month</th><th>TSLA date</th><th>Adj. close · $/share</th><th>Gasoline · $/gal</th><th>EIA weeks</th><th>TSLA return</th><th>Gasoline change</th><th>Coverage</th></tr></thead>
+<tbody id="audit"></tbody>
+</table>
+</div>
+</section>
+
+<section class="panel">
+<div class="kicker">TRANSPARENT DATA & METHODOLOGY</div>
+<div class="sourcegrid">
+<div>
+<h2>Dataset A / Tesla stock</h2>
+<p class="small"><a href="https://finance.yahoo.com/quote/TSLA/history/" target="_blank" rel="noopener">Yahoo Finance · TSLA daily historical prices</a><br>
+Units: USD per share, adjusted close.<br>
+Latest completed-session observation: <strong>October 16, 2026 · $354.72</strong>.<br>
+October 19’s session was still open at the analysis cutoff, so its intraday price is excluded.</p>
+<p class="small">Embedded stock coverage: October 2025–October 2026. Values were verified from Yahoo’s daily historical tables, including its regional editions. The complete daily download and the earlier 24 monthly stock observations could not be retrieved. This dashboard does not present the available subset as a full 36-month study.</p>
+<details>
+<summary>Complete the stock history with a Yahoo export</summary>
+<p>Import a daily Yahoo CSV containing <code>Date</code> and <code>Adj Close</code>. ISO dates are required. Each month uses the latest valid daily observation. This replaces the embedded stock dataset; import the complete requested range. Blank or invalid values are skipped, and calendar gaps remain missing.</p>
+<input id="stockFile" type="file" accept=".csv" aria-label="Import Yahoo daily adjusted-close CSV">
+<div class="status" id="importStatus" role="status"></div>
+</details>
+</div>
+<div>
+<h2>Dataset B / U.S. regular gasoline</h2>
+<p class="small"><a href="https://www.eia.gov/dnav/pet/hist/LeafHandler.ashx?n=PET&s=EMM_EPMR_PTE_NUS_DPG&f=W" target="_blank" rel="noopener">EIA · Weekly U.S. Regular All Formulations Retail Gasoline Prices</a><br>
+Series: <code>PET.EMM_EPMR_PTE_NUS_DPG.W</code>.<br>
+Units: USD per gallon, including taxes.<br>
+Latest retrieved week: <strong>October 12, 2026 · $4.331/gallon</strong>.</p>
+<p class="small">Monthly values are the arithmetic mean of weekly observations whose published observation dates fall within the calendar month. No interpolation or day weighting is applied. October 2026 contains two published weekly observations, October 5 and 12; it is a partial-month average. Retrieved EIA page release date: October 14, 2026.</p>
+</div>
+</div>
+<details style="margin-top:22px">
+<summary>Calculations and interpretation</summary>
+<p>October 2023 through October 2026 spans 36 elapsed months and 37 monthly price observations. Complete coverage would yield 36 within-window monthly percentage changes.</p>
+<p>Monthly change = 100 × (current monthly price / previous calendar month price − 1). Stock prices use the last available adjusted closing price; gasoline prices use the mean of the dated weekly observations. The first selected month’s change is omitted. A missing previous calendar month makes that month’s stock return unavailable.</p>
+<p>Selected-period totals require both selected endpoint prices: 100 × (last price / first price − 1). If a stock endpoint is missing, its selected-period total remains unavailable. An explicitly labeled overlap return is shown separately. Index charts start at 100 on the first month with both prices and retain gaps.</p>
+<p>Pearson r is calculated only from months containing both changes. The trendline is ordinary least squares with an intercept. R² is the coefficient of determination, equal to r² for this regression. At least three valid pairs and nonzero variance in both variables are required. R² and r are different statistics.</p>
+<p>Correlation describes contemporaneous association, not causation. The shorter available stock sample, October’s incomplete data, seasonality, broader markets, interest rates, and company events limit the interpretation. The dashboard does not test lagged effects or statistical significance.</p>
+</details>
+</section>
+<footer>Embedded source snapshot retrieved October 19, 2026. No fabricated or forecast observations. Hover or tap chart points for values; click legends to toggle series. All calculations run locally in your browser.</footer>
+</main>
+<script>
+/* Actual weekly EIA observations, ordered by published date within month.
+   Source: PET.EMM_EPMR_PTE_NUS_DPG.W, retrieved 2026-10-19. */
+const weekly = [
+[3.798,3.684,3.576,3.533,3.473],
+[3.396,3.349,3.289,3.238],
+[3.231,3.136,3.053,3.116],
+[3.089,3.073,3.058,3.062,3.095],
+[3.136,3.192,3.269,3.249],
+[3.350,3.376,3.453,3.523],
+[3.517,3.591,3.628,3.668,3.653],
+[3.643,3.608,3.584,3.577],
+[3.516,3.429,3.435,3.438],
+[3.479,3.489,3.496,3.471,3.484],
+[3.448,3.414,3.382,3.313],
+[3.289,3.236,3.180,3.185,3.179],
+[3.136,3.171,3.144,3.097],
+[3.069,3.052,3.046,3.044],
+[3.034,3.008,3.016,3.024,3.006],
+[3.047,3.043,3.109,3.103],
+[3.082,3.128,3.148,3.125],
+[3.078,3.069,3.058,3.115,3.162],
+[3.243,3.168,3.141,3.133],
+[3.147,3.120,3.173,3.160],
+[3.127,3.108,3.139,3.213,3.164],
+[3.125,3.130,3.121,3.123],
+[3.140,3.118,3.125,3.147],
+[3.177,3.192,3.168,3.173,3.118],
+[3.124,3.061,3.019,3.035],
+[3.019,3.056,3.062,3.061],
+[2.985,2.940,2.895,2.841,2.811],
+[2.796,2.779,2.806,2.853],
+[2.867,2.902,2.924,2.937],
+[3.015,3.502,3.720,3.961,3.990],
+[4.120,4.123,4.044,4.123],
+[4.452,4.500,4.490,4.475],
+[4.305,4.146,4.052,3.914,3.831],
+[3.777,3.855,4.001,4.096],
+[4.079,4.006,4.049,4.085,4.071],
+[4.157,4.319,4.478,4.465],
+[4.354,4.331]
+];
+/* Verified Yahoo daily adjusted closes at month end, or latest completed
+   session for the partial month. Earlier months intentionally remain absent. */
+let stock = Object.fromEntries([
+["2025-10-31",456.56],["2025-11-28",430.17],
+["2025-12-31",449.72],["2026-01-30",430.41],
+["2026-02-27",402.51],["2026-03-31",371.75],
+["2026-04-30",381.63],["2026-05-29",435.79],
+["2026-06-30",420.60],["2026-07-31",311.21],
+["2026-08-31",367.95],["2026-09-30",354.81],
+["2026-10-16",354.72]
+].map(([date,value])=>[date.slice(0,7),{date,value}]));
+const months=Array.from({length:37},(_,i)=>new Date(Date.UTC(2023,9+i,1)).toISOString().slice(0,7));
+const $=id=>document.getElementById(id);
+const colors={Tesla:"#84aaff",Gasoline:"#5de0bd","OLS trend":"#f1c279"};
+const hidden={};
+const finite=n=>typeof n==="number"&&Number.isFinite(n);
+const fmt=(v,d=2)=>finite(v)?v.toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d}):"—";
+const pct=v=>finite(v)?(v>0?"+":"")+fmt(v)+"%":"—";
+const escape=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const labelMonth=m=>new Date(m+"-01T00:00:00Z").toLocaleDateString("en-US",{month:"short",year:"numeric",timeZone:"UTC"});
+const gas=weekly.map(a=>a.reduce((x,y)=>x+y,0)/a.length);
+function weeklyDates(i){
+ const d=new Date(months[i]+"-01T00:00:00Z"),out=[];
+ while(d.getUTCDay()!==1)d.setUTCDate(d.getUTCDate()+1);
+ for(let j=0;j<weekly[i].length;j++){
+   out.push(d.toISOString().slice(0,10));d.setUTCDate(d.getUTCDate()+7);
+ }
+ return out;
+}
+for(const id of ["start","end"]){
+ $(id).innerHTML=months.map(m=>`<option value="${m}">${labelMonth(m)}</option>`).join("");
+}
+$("start").value=months[0];$("end").value=months.at(-1);
+function getData(){
+ const start=$("start").value,end=$("end").value;
+ let data=months.map((m,i)=>({m,i,s:stock[m]?.value??null,date:stock[m]?.date??null,g:gas[i],weeks:weekly[i].length,partial:m==="2026-10"}));
+ data=data.filter(r=>r.m>=start&&r.m<=end&&($("partial").checked||!r.partial));
+ data=data.map((r,i)=>({...r,
+   sr:i&&finite(r.s)&&finite(data[i-1].s)?100*(r.s/data[i-1].s-1):null,
+   gr:i?100*(r.g/data[i-1].g-1):null
+ }));
+ const pairs=data.filter(r=>finite(r.sr)&&finite(r.gr));
+ let fit=null;
+ if(pairs.length>=3){
+  const mx=pairs.reduce((s,r)=>s+r.gr,0)/pairs.length;
+  const my=pairs.reduce((s,r)=>s+r.sr,0)/pairs.length;
+  const xx=pairs.reduce((s,r)=>s+(r.gr-mx)**2,0);
+  const yy=pairs.reduce((s,r)=>s+(r.sr-my)**2,0);
+  const xy=pairs.reduce((s,r)=>s+(r.gr-mx)*(r.sr-my),0);
+  if(xx>0&&yy>0){
+   const r=Math.max(-1,Math.min(1,xy/Math.sqrt(xx*yy)));
+   fit={r,r2:r*r,slope:xy/xx,intercept:my-xy/xx*mx};
+  }
+ }
+ return {data,pairs,fit,common:data.filter(r=>finite(r.s))};
+}
+function render(){
+ if($("start").value>$("end").value){
+  $("finding").textContent="Choose a start month that is on or before the end month.";
+  return;
+ }
+ const {data,pairs,fit,common}=getData();
+ const first=data[0],last=data.at(-1),base=common[0],lastCommon=common.at(-1);
+ $("correlation").textContent=fit?fmt(fit.r,3):"—";
+ $("rSquared").textContent=fit?fmt(fit.r2,3):"—";
+ $("paircount").textContent=`${pairs.length} paired changes · ${data.length} selected months`;
+ const total=first&&last&&data.length>1&&finite(first.s)&&finite(last.s)?100*(last.s/first.s-1):null;
+ $("totalStock").textContent=pct(total);
+ $("totalGas").textContent=first&&last&&data.length>1?pct(100*(last.g/first.g-1)):"—";
+ const interval=first&&last?`${labelMonth(first.m)} → ${labelMonth(last.m)}${last.partial?" · partial":""}`:"No selected observations";
+ const overlap=common.length>1?`${pct(100*(lastCommon.s/base.s-1))} over available overlap (${base.m} → ${lastCommon.m})`:"Insufficient stock observations";
+ $("stockDescription").textContent=finite(total)?interval:"Selected endpoint unavailable. "+overlap;
+ $("gasDescription").textContent=interval;
+ const missing=data.filter(r=>!finite(r.s)).length;
+ $("coverage").innerHTML=`<strong>${missing?"Incomplete stock history.":"Available selected stock coverage."}</strong> ${data.length-missing}/${data.length} selected stock months and ${data.length}/${data.length} gasoline months are available. `+
+  `Earlier TSLA observations could not be retrieved from Yahoo’s rate-limited historical download; no values are estimated. `+
+  `Latest embedded source dates: TSLA October 16, 2026; EIA October 12, 2026. October 2026 is ${$("partial").checked?"included as month-to-date":"excluded as incomplete"}.`;
+ if(fit){
+  const strength=Math.abs(fit.r)<.2?"a weak":Math.abs(fit.r)<.5?"a modest":"a stronger";
+  $("finding").textContent=`The available paired sample shows ${strength} ${fit.r>=0?"positive":"negative"} contemporaneous association (r = ${fmt(fit.r,3)}, n = ${pairs.length}). `+
+  `${missing?"This is a subset analysis, not a result for the full requested 36 months. ":""}Correlation does not establish causation.`;
+ }else $("finding").textContent="A regression requires at least three paired monthly changes and nonzero variation. Expand the date range or import the missing Yahoo history.";
+ $("baseDescription").textContent=base?`First shared month = 100 · ${labelMonth(base.m)}. ${base.m!==$("start").value?"The requested starting stock observation is unavailable, so the comparison starts later.":""}`:"No shared baseline is available.";
+ const indexSeries=[
+ {name:"Tesla",points:data.map(r=>({x:r.i,y:base&&r.m>=base.m&&finite(r.s)?100*r.s/base.s:null,tip:`${labelMonth(r.m)}${r.partial?" · partial":""}\nTesla: $${fmt(r.s)}/share\nIndex: ${base&&finite(r.s)?fmt(100*r.s/base.s):"—"}`}))},
+ {name:"Gasoline",points:data.map(r=>({x:r.i,y:base&&r.m>=base.m?100*r.g/base.g:null,tip:`${labelMonth(r.m)}${r.partial?" · partial":""}\nGasoline: $${fmt(r.g,4)}/gallon\nIndex: ${base?fmt(100*r.g/base.g):"—"}`}))}
+ ];
+ const changes=[
+ {name:"Tesla",points:data.map(r=>({x:r.i,y:r.sr,tip:`${labelMonth(r.m)}${r.partial?" · partial":""}\nTesla return: ${pct(r.sr)}\nGasoline change: ${pct(r.gr)}`}))},
+ {name:"Gasoline",points:data.map(r=>({x:r.i,y:r.gr,tip:`${labelMonth(r.m)}${r.partial?" · partial":""}\nTesla return: ${pct(r.sr)}\nGasoline change: ${pct(r.gr)}`}))}
+ ];
+ const scatter=[{name:"Tesla",dots:true,points:pairs.map(r=>({x:r.gr,y:r.sr,tip:`${labelMonth(r.m)}${r.partial?" · partial":""}\nGasoline change: ${pct(r.gr)}\nTesla return: ${pct(r.sr)}`}))}];
+ if(fit){
+  let min=Math.min(...pairs.map(r=>r.gr)),max=Math.max(...pairs.map(r=>r.gr));
+  scatter.push({name:"OLS trend",trend:true,points:[{x:min,y:fit.intercept+fit.slope*min},{x:max,y:fit.intercept+fit.slope*max}]});
+ }
+ chart("index",indexSeries,"Month","Indexed value",false,data,false);
+ chart("changes",changes,"Month","Percentage change (%)",false,data,true);
+ chart("scatter",scatter,"Gasoline monthly change (%)","TSLA monthly return (%)",true,data,true);
+ $("regression").textContent=fit?`TSLA return = ${fmt(fit.intercept)} ${fit.slope>=0?"+":"−"} ${fmt(Math.abs(fit.slope))} × gasoline change · r = ${fmt(fit.r,3)} · R² = ${fmt(fit.r2,3)}`:"Regression unavailable for this selection.";
+ let filtered=data.filter(r=>$("auditFilter").value==="all"||($("auditFilter").value==="missing"?!finite(r.s):finite(r.sr)&&finite(r.gr)));
+ $("audit").innerHTML=filtered.map(r=>{
+ const details=weekly[r.i].map((v,j)=>`${weeklyDates(r.i)[j]}: $${fmt(v,3)}`).join("; ");
+ return `<tr><td>${labelMonth(r.m)}</td><td>${r.date||"Not retrieved"}</td><td class="${finite(r.s)?"":"missing"}">${fmt(r.s)}</td><td>${fmt(r.g,4)}</td><td title="${escape(details)}">${r.weeks} ⓘ</td><td>${pct(r.sr)}</td><td>${pct(r.gr)}</td><td class="${finite(r.s)?"":"missing"}">${r.partial?"Partial month":finite(r.s)?"Observed":"TSLA missing"}</td></tr>`;
+ }).join("")||'<tr><td colspan="8" style="text-align:center">No matching observations</td></tr>';
+}
+function chart(id,series,xTitle,yTitle,isScatter,data,zero){
+ const el=$(id),legend=$("legend-"+id);
+ legend.innerHTML=series.map(s=>`<button class="${hidden[id+s.name]?"off":""}" data-series="${escape(s.name)}" aria-pressed="${!hidden[id+s.name]}"><i style="background:${colors[s.name]}"></i>${s.dots?"Monthly observations":s.name}</button>`).join("");
+ legend.querySelectorAll("button").forEach(b=>b.onclick=()=>{hidden[id+b.dataset.series]=!hidden[id+b.dataset.series];render()});
+ const visible=series.filter(s=>!hidden[id+s.name]);
+ const pts=visible.flatMap(s=>s.points.filter(p=>finite(p.y)));
+ const w=Math.max(330,el.clientWidth),h=el.clientHeight,L=w<450?53:64,R=18,T=18,B=62;
+ if(!pts.length){el.innerHTML='<div style="display:grid;place-items:center;height:100%;color:#98a9c1;font-size:12px;text-align:center">No visible observations.<br>Expand the range or enable a legend.</div>';return}
+ let xmin=isScatter?Math.min(...pts.map(p=>p.x)):(data[0]?.i??0);
+ let xmax=isScatter?Math.max(...pts.map(p=>p.x)):(data.at(-1)?.i??36);
+ let ymin=Math.min(...pts.map(p=>p.y)),ymax=Math.max(...pts.map(p=>p.y));
+ if(zero){ymin=Math.min(ymin,0);ymax=Math.max(ymax,0)}
+ let ypad=(ymax-ymin)*.12||1;ymin-=ypad;ymax+=ypad;
+ if(xmin===xmax){xmin-=1;xmax+=1}
+ if(isScatter){let pad=(xmax-xmin)*.12;xmin-=pad;xmax+=pad}
+ const X=x=>L+(x-xmin)/(xmax-xmin)*(w-L-R);
+ const Y=y=>h-B-(y-ymin)/(ymax-ymin)*(h-T-B);
+ let svg=`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${escape(yTitle+" against "+xTitle)}">`;
+ for(let i=0;i<=4;i++){
+  let v=ymin+(ymax-ymin)*i/4,y=Y(v);
+  svg+=`<path d="M${L} ${y}H${w-R}" stroke="#27344a" stroke-width="1"/><text x="${L-9}" y="${y+4}" text-anchor="end" fill="#98a9c1" font-size="10">${v.toFixed(1)}</text>`;
+ }
+ if(zero&&ymin<0&&ymax>0)svg+=`<path d="M${L} ${Y(0)}H${w-R}" stroke="#8da0bc" stroke-width="1.2" stroke-dasharray="4 4"/><text x="${w-R}" y="${Y(0)-6}" text-anchor="end" fill="#98a9c1" font-size="9">0%</text>`;
+ const ticks=w<450?3:4;
+ for(let i=0;i<=ticks;i++){
+  const v=xmin+(xmax-xmin)*i/ticks,x=X(v);
+  let text=isScatter?v.toFixed(1):labelMonth(months[Math.max(0,Math.min(36,Math.round(v)))]);
+  svg+=`<text x="${x}" y="${h-B+23}" text-anchor="${i===0?"start":i===ticks?"end":"middle"}" fill="#98a9c1" font-size="10">${text}</text>`;
+ }
+ const tipValues=[];
+ visible.forEach(s=>{
+  const color=colors[s.name];let path="",previous=false;
+  s.points.forEach(p=>{
+   if(!finite(p.y)){previous=false;return}
+   path+=(previous?"L":"M")+X(p.x)+" "+Y(p.y)+" ";previous=true;
+  });
+  if(!s.dots)svg+=`<path d="${path}" fill="none" stroke="${color}" stroke-width="${s.trend?1.8:2.3}" ${s.trend?'stroke-dasharray="5 4"':""}/>`;
+  s.points.forEach(p=>{
+   if(!finite(p.y)||s.trend)return;
+   const idx=tipValues.length;tipValues.push(p.tip||"");
+   svg+=`<circle cx="${X(p.x)}" cy="${Y(p.y)}" r="${s.dots?5.5:3}" fill="${color}" stroke="#121c2e" stroke-width="1.2"/>`;
+   svg+=`<circle tabindex="0" aria-label="${escape(p.tip)}" data-tip="${idx}" cx="${X(p.x)}" cy="${Y(p.y)}" r="${s.dots?12:9}" fill="transparent" style="cursor:crosshair"><title>${escape(p.tip)}</title></circle>`;
+  });
+ });
+ svg+=`<text x="${L+(w-L-R)/2}" y="${h-9}" text-anchor="middle" fill="#98a9c1" font-size="11">${escape(xTitle)}</text><text transform="translate(13 ${T+(h-T-B)/2}) rotate(-90)" text-anchor="middle" fill="#98a9c1" font-size="10">${escape(yTitle)}</text></svg><div class="tooltip"></div>`;
+ el.innerHTML=svg;
+ const tip=el.querySelector(".tooltip");
+ el.querySelectorAll("[data-tip]").forEach(dot=>{
+  function show(ev){
+   tip.textContent=tipValues[Number(dot.dataset.tip)];tip.style.display="block";
+   let rect=el.getBoundingClientRect(),cx=Number(dot.getAttribute("cx")),cy=Number(dot.getAttribute("cy"));
+   const x=ev?.clientX?ev.clientX-rect.left:cx;
+   const y=ev?.clientY?ev.clientY-rect.top:cy;
+   tip.style.left=Math.max(0,Math.min(x+12,w-tip.offsetWidth-4))+"px";
+   tip.style.top=Math.max(0,Math.min(y-tip.offsetHeight-12,h-tip.offsetHeight))+"px";
+  }
+  dot.onpointermove=show;dot.onclick=show;dot.onfocus=()=>show();
+  dot.onpointerleave=()=>tip.style.display="none";dot.onblur=()=>tip.style.display="none";
+ });
+}
+function parseCSV(text){
+ let rows=[],row=[],cell="",quoted=false;
+ text=text.replace(/^\uFEFF/,"");
+ for(let i=0;i<text.length;i++){
+  let c=text[i];
+  if(c==='"'){if(quoted&&text[i+1]==='"'){cell+='"';i++}else quoted=!quoted}
+  else if(c===","&&!quoted){row.push(cell.trim());cell=""}
+  else if((c==="\n"||c==="\r")&&!quoted){
+   if(c==="\r"&&text[i+1]==="\n")i++;
+   row.push(cell.trim());if(row.some(Boolean))rows.push(row);row=[];cell="";
+  }else cell+=c;
+ }
+ if(quoted)throw Error("The CSV contains an unclosed quote.");
+ row.push(cell.trim());if(row.some(Boolean))rows.push(row);
+ return rows;
+}
+$("stockFile").onchange=async e=>{
+ try{
+  let f=e.target.files[0];if(!f)return;
+  let rows=parseCSV(await f.text()),headers=rows.shift()?.map(s=>s.toLowerCase());
+  const di=headers?.indexOf("date"),vi=headers?.indexOf("adj close");
+  if(!(di>=0&&vi>=0))throw Error("Required CSV columns: Date and Adj Close.");
+  let imported={},skipped=0;
+  rows.forEach(row=>{
+   const date=row[di],raw=row[vi],value=Number(raw);
+   if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!raw||!finite(value)||value<=0){skipped++;return}
+   const parsed=new Date(date+"T00:00:00Z");
+   if(!finite(+parsed)||parsed.toISOString().slice(0,10)!==date){skipped++;return}
+   if(date<"2023-10-01"||date>"2026-10-16")return;
+   const m=date.slice(0,7);
+   if(!imported[m]||date>imported[m].date)imported[m]={date,value};
+  });
+  if(!Object.keys(imported).length)throw Error("No valid adjusted closes in the date range.");
+  stock=imported;
+  $("importStatus").textContent=`Imported ${Object.keys(stock).length} monthly observations from ${f.name}. ${skipped} invalid/blank rows skipped. User-supplied source export; not independently authenticated.`;
+  render();
+ }catch(err){$("importStatus").textContent=err.message}
+};
+$("export").onclick=()=>{
+ const {data}=getData();
+ const text="Month,TSLA observation date,TSLA adjusted close USD,Gasoline monthly mean USD per gallon,EIA weekly count,TSLA return percent,Gasoline change percent,Partial month\n"+
+ data.map(r=>[r.m,r.date,r.s,r.g,r.weeks,r.sr,r.gr,r.partial].map(v=>v??"").join(",")).join("\n");
+ const url=URL.createObjectURL(new Blob([text],{type:"text/csv"}));
+ const a=document.createElement("a");a.href=url;a.download="tesla-gasoline-monthly.csv";a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+$("reset").onclick=()=>{$("start").value=months[0];$("end").value=months.at(-1);$("partial").checked=true;render()};
+for(const id of ["start","end","partial","auditFilter"])$(id).onchange=render;
+let resizeTimer;window.addEventListener("resize",()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(render,120)});
+render();
+</script>
+</body>
+</html>
